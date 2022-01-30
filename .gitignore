@@ -1,0 +1,11 @@
+# Built binaries
+libs
+obj
+
+# NVME images
+*.img
+*.bin
+*.nve
+
+# Mapping tables
+*.h
