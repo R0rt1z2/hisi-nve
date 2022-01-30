@@ -1,6 +1,5 @@
 import sys
 
-NV_NVME_BASE_ADDR = 0x20000
 NV_NVME_HASHED_USRKEY = 'UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU'
 NV_NVME_ENTRIES = []
 
@@ -10,26 +9,26 @@ def parse_nv_name(nv_name):
     for c in nv_name:
         if c.isalnum():
             out_buf += c
-    
+
     return out_buf
 
 def main():
     if (len(sys.argv) < 3):
         print(f"Usage command: {sys.argv[0]} <nvme> <ro.hardware>")
-    
+
     try:
         nvme_fd = open(sys.argv[1], "rb")
     except FileNotFoundError:
         exit(f"Could not open {sys.argv[1]}!")
+
+    nvme_fd.seek(0x20000 if nvme_fd.read(10) in [(b'\x00' * 10), (b'U' * 10)] else 0x0)
 
     try:
         header_fd = open(f'{sys.argv[2]}.h', "w")
     except FileNotFoundError:
         exit(f"Could not open the header mappings file!")
 
-    nvme_fd.seek(NV_NVME_BASE_ADDR)
     nve_hashed_key = 0
-
     while True:
         nv_number     = int.from_bytes(nvme_fd.read(4), "little")
         nv_name       = parse_nv_name(str(nvme_fd.read(8).decode("utf-8")))
@@ -47,6 +46,7 @@ def main():
         nv_number += 1
         nv_pad = nvme_fd.read(3)
         while nv_pad != nv_number.to_bytes(3, 'little'):
+            if nv_pad == b'': break
             nv_pad = nvme_fd.read(3)
         
         nvme_fd.seek(nvme_fd.tell() - 3)
