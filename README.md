@@ -56,6 +56,7 @@ Kirin 65X | `hi6250` | Yes
 Kirin 950 | `kirin950` | No
 Kirin 970 | `kirin970` | No
 Kirin 710 | `kirin710` | Yes
+Kirin 980 | `kirin980` | No
 Kirin 990 | `kirin990` | No
 
 
