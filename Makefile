@@ -19,15 +19,8 @@ android:
 	@echo "Building Android"
 	$(NDK_BUILD)
 
-push: $(BIN_PATH) $(LOADER)
-	adb push $(BIN_PATH) /data/local/tmp/$(notdir $(BIN_PATH))
-
-shell: push
-	adb shell /data/local/tmp/$(BIN)
-
 clean:
 	$(NDK_BUILD) clean
-	-adb shell rm /data/local/tmp/$(notdir $(BIN_PATH))
 
 distclean: clean
 	$(RM) -rf libs obj

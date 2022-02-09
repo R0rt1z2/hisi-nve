@@ -5,6 +5,7 @@
 ### Disclaimers
 * Use this tool at your own risk and always backup NVME.
 * This tool was made for educational purposes only.
+* This tool requires a **ROOT shell**.
 
 ### Usage
 ```bash
@@ -24,7 +25,7 @@ finished. total time: 2.416s
 user@host:~$
 
 # Read the S/N of the phone
-warsaw:/ # ./data/local/tmp/hisi-nve w USRKEY 0123456789ABCDEF
+warsaw:/ # ./data/local/tmp/hisi-nve r SN
 [+] 2XJDU17408002XXX
 warsaw:/ #
 ```
