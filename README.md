@@ -54,6 +54,7 @@ Name | Code Name | Tested
 ------ | ----- | -----
 Kirin 620 | `hi6210sft` | Yes
 Kirin 65X | `hi6250` | Yes
+Kirin 960 | `hi3660` | Yes
 Kirin 950 | `kirin950` | No
 Kirin 970 | `kirin970` | No
 Kirin 710 | `kirin710` | Yes
