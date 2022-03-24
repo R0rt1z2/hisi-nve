@@ -50,16 +50,16 @@ user@host:~/hisi-nve$
 ```
 
 ## Supported SoCs
-Name | Code Name | Tested
------- | ----- | -----
-Kirin 620 | `hi6210sft` | Yes
-Kirin 65X | `hi6250` | Yes
-Kirin 960 | `hi3660` | Yes
-Kirin 950 | `kirin950` | No
-Kirin 970 | `kirin970` | No
-Kirin 710 | `kirin710` | Yes
-Kirin 980 | `kirin980` | No
-Kirin 990 | `kirin990` | No
+Name | Code Name | Read | Write
+------ | ----- | ----- | -----
+Kirin 620 | `hi6210sft` | Yes | Yes
+Kirin 65X | `hi6250` | Yes | Yes
+Kirin 960 | `hi3660` | Yes | Yes
+Kirin 950 | `kirin950` | ? | ?
+Kirin 970 | `kirin970` | ? | ?
+Kirin 710 | `kirin710` | Yes | No
+Kirin 980 | `kirin980` | ? | ?
+Kirin 990 | `kirin990` | ? | ?
 
 
 ### Adding support for new SoCs
