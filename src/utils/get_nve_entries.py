@@ -37,7 +37,7 @@ def main():
         nv_crc        = int.from_bytes(nvme_fd.read(2), "little")
         nv_data       = str(nvme_fd.read(104))
 
-        if (nv_name == 'USRKEY'
+        if (nv_name == 'WVLOCK'
             and NV_NVME_HASHED_USRKEY in nv_data):
                 nve_hashed_key = 1
 
