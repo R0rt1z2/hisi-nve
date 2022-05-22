@@ -55,6 +55,9 @@ int main(int argc, char *argv[]) {
     if (*argv[0] == 'r')
         rw = 1;
 
+    if (rw != 1 && argc < 4)
+        NVE_ERROR("Write requires at least two arguments!\n");
+
     if (sizeof(argv[1]) > NV_NAME_LENGTH 
         || get_nve_index_with_name(argv[1]) == -1)
             NVE_ERROR("Wrong nv item name: %s!\n", argv[1]);
