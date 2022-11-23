@@ -11,9 +11,9 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include "crypto/sha256.h"
-#include "nve/hisi_nve.h"
-#include "nve/nve_mappings.h"
+#include <sha256.h>
+#include <hisi_nve.h>
+#include <nve_mappings.h>
 
 struct hardware_range *nve_range;
 
