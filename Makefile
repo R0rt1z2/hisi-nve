@@ -1,5 +1,5 @@
 ifeq (,$(findstring ndk,$(PATH)))
-$(error "Please update your $PATH to include Android NDK: export PATH=$PATH:<path to>android-ndk")
+$(error "Please update your $PATH to include Android NDK: export PATH=$$PATH:<path to>android-ndk")
 endif
 
 NDK_BUILD := NDK_PROJECT_PATH=. ndk-build NDK_APPLICATION_MK=./Application.mk
