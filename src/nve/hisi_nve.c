@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 
 #include <sha256.h>
+#include <memory.h>
 #include <hisi_nve.h>
 #include <nve_mappings.h>
 
@@ -36,11 +37,58 @@ struct hardware_range *get_hardware_range(char *soc) {
     NVE_ERROR("Unsupported CPU: %s!\n", soc);
 }
 
+int nve_manage_fblock(int fd, uint32_t action, int new_status) {
+    uint32_t block_size = 0;
+    unsigned char *data_buffer, *ptr = NULL;
+    unsigned char header, fblock_offset, fblock_status = 0x0;
+
+    // Hex-based signature of 'FBLOCK'
+    uint8_t fblock_needle[6] = {0x46, 0x42, 0x4c, 0x4f, 0x43, 0x4b};
+
+    read(fd, &header, sizeof(header));
+    // if (header != 0x0) block_size = 0x00020000;
+    block_size = 0x00020000;
+    size_t size = lseek(fd, 0, SEEK_END);
+
+    while (block_size >= 0) {
+        data_buffer = (unsigned char *)mmap(NULL, 0x00020000, PROT_READ | PROT_WRITE, MAP_SHARED , fd, block_size);
+
+        if (data_buffer == MAP_FAILED) {
+            NVE_WARNING("Unable to map memory for block %#08x (%s)!\n", block_size, strerror(errno));
+            return -1;
+        }
+
+        ptr = memmem(data_buffer, 0x00020000, fblock_needle, sizeof(fblock_needle));
+        if (ptr) {
+            if (action) {
+                fblock_status = data_buffer[(ptr - data_buffer) + 8];
+                NVE_INFO("FBLOCK (0x%X): %s (%d)\n", block_size + (ptr - data_buffer), fblock_status == 0x1 ? "LOCKED" : "UNLOCKED", fblock_status);
+            } else {
+                if (new_status == 0 || new_status == 1) {
+                    fblock_status = data_buffer[(ptr - data_buffer) + 8];
+                    NVE_INFO("Setting FBLOCK (0x%X) status to %s!\n", block_size + (ptr - data_buffer), new_status == 0x1 ? "LOCKED" : "UNLOCKED");
+                    data_buffer[(ptr - data_buffer) + 8] = (unsigned char)new_status;
+                }
+            }
+
+            block_size += 0x00020000;
+        } else {
+            block_size = -1;
+            break;
+        }
+
+        munmap(data_buffer, 0x00020000);
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
-    uint32_t rw = 0, hash = 0;
+    int ret, nvme_fd = -1;
+    uint32_t rw, hash, fblock = 0;
     char nve_hisi_soc[12];
     char hashed_key[SHA256_BLOCK_SIZE];
-    
+
     __system_property_get("ro.hardware", nve_hisi_soc);
     nve_range = get_hardware_range(nve_hisi_soc);
 
@@ -58,7 +106,7 @@ int main(int argc, char *argv[]) {
     if (rw != 1 && argc < 4)
         NVE_ERROR("Write requires at least two arguments!\n");
 
-    if (sizeof(argv[1]) > NV_NAME_LENGTH 
+    if (sizeof(argv[1]) > NV_NAME_LENGTH
         || get_nve_index_with_name(argv[1]) == -1)
             NVE_ERROR("Wrong nv item name: %s!\n", argv[1]);
 
@@ -66,44 +114,62 @@ int main(int argc, char *argv[]) {
         && nve_range->nve_hashed_key != 0)
             hash = 1;
 
-    int nvme_fd = open(NV_IOCTL_NODE, O_RDWR);
+    if (strcmp(argv[1], "FBLOCK"))  {
+        nvme_fd = open(NV_IOCTL_NODE, O_RDWR);
 
-    if (nvme_fd < 0)
-        NVE_ERROR("Could not open: %s!\n", NV_IOCTL_NODE);
+        if (nvme_fd < 0)
+            NVE_ERROR("Could not open: %s!\n", NV_IOCTL_NODE);
 
-    struct hisi_nve_info_user nveCommandBuffer = {
-        .nv_operation  = rw,
-        .nv_number     = get_nve_index_with_name(argv[1]),
-        .valid_size    = NVE_NV_DATA_SIZE
-    };
+        struct hisi_nve_info_user nveCommandBuffer = {
+            .nv_operation  = rw,
+            .nv_number     = get_nve_index_with_name(argv[1]),
+            .valid_size    = NVE_NV_DATA_SIZE
+        };
 
-    strncpy(nveCommandBuffer.nv_name, 
-            argv[1], (sizeof(argv[2]) - 1));
-    nveCommandBuffer.nv_name[(sizeof(argv[2])) - 1] = '\0';
+        strncpy(nveCommandBuffer.nv_name,
+                argv[1], (sizeof(argv[2]) - 1));
+        nveCommandBuffer.nv_name[(sizeof(argv[2])) - 1] = '\0';
 
-    if (!rw) {
-        if (hash) {
-            if (strlen(argv[2]) > NVE_NV_USRLOCK_LEN)
-                NVE_ERROR("Invalid unlock code: %s!\n", argv[2]);
-            SHA256(argv[2], strlen(argv[2]), hashed_key);
-            strncpy(nveCommandBuffer.nv_data, hashed_key, (strlen(hashed_key)));
-        } else {
-            strncpy(nveCommandBuffer.nv_data, 
-                argv[2], (sizeof(argv[2]) - 1));
-            nveCommandBuffer.nv_data[(sizeof(argv[2])) - 1] = '\0';
+        if (!rw) {
+            if (hash) {
+                if (strlen(argv[2]) > NVE_NV_USRLOCK_LEN)
+                    NVE_ERROR("Invalid unlock code: %s!\n", argv[2]);
+                SHA256(argv[2], strlen(argv[2]), hashed_key);
+                strncpy(nveCommandBuffer.nv_data, hashed_key, (strlen(hashed_key)));
+            } else {
+                strncpy(nveCommandBuffer.nv_data,
+                    argv[2], (sizeof(argv[2]) - 1));
+                nveCommandBuffer.nv_data[(sizeof(argv[2])) - 1] = '\0';
+            }
         }
-    }
 
-    int ret = ioctl(nvme_fd, NVME_IOCTL_ACCESS_DATA, 
-                   (struct hisi_nve_info_user*) &nveCommandBuffer);
-    
-    if (ret < 0)
-        NVE_ERROR("Something went wrong: %s!\n", strerror(errno));
+        ret = ioctl(nvme_fd, NVME_IOCTL_ACCESS_DATA,
+                    (struct hisi_nve_info_user*) &nveCommandBuffer);
 
-    if (rw) {
-        NVE_SUCCESS("%s\n", nveCommandBuffer.nv_data);
+        if (ret < 0)
+            NVE_ERROR("Something went wrong: %s!\n", strerror(errno));
+
+        if (rw) {
+            NVE_SUCCESS("%s\n", nveCommandBuffer.nv_data);
+        } else {
+            NVE_SUCCESS("Sucessfully updated %s!\n", argv[1]);
+        }
     } else {
-        NVE_SUCCESS("Sucessfully updated %s!\n", argv[1]);
+        nvme_fd = open(NV_DEVICE_NAME, O_RDWR);
+
+        if (nvme_fd < 0) {
+            NVE_WARNING("Could not open: %s!\n", NV_DEVICE_NAME);
+
+            nvme_fd = open(NV_DEVICE_BLOCK, O_RDWR);
+            if (nvme_fd < 0)
+                NVE_ERROR("Could not open: %s!\n", NV_DEVICE_BLOCK);
+        }
+
+        if (*argv[0] == 'w') {
+            ret = nve_manage_fblock(nvme_fd, 0, atoi(argv[2]));
+        } else {
+            ret = nve_manage_fblock(nvme_fd, 1, -1);
+        }
     }
 
     close(nvme_fd);

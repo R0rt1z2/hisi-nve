@@ -28,6 +28,31 @@ user@host:~$
 warsaw:/ # ./data/local/tmp/hisi-nve r SN
 [+] 2XJDU17408002XXX
 warsaw:/ #
+
+# Set FBLOCK state to unlocked
+warsaw:/ # ./hisi-nve r FBLOCK
+[?] FBLOCK (0x29C04): LOCKED (1)
+[?] FBLOCK (0x49C04): LOCKED (1)
+[?] FBLOCK (0x69C04): LOCKED (1)
+[?] FBLOCK (0x89C04): LOCKED (1)
+[?] FBLOCK (0xA9C04): LOCKED (1)
+[?] FBLOCK (0xC9C04): LOCKED (1)
+[?] FBLOCK (0xE9C04): LOCKED (1)
+warsaw:/ # ./hisi-nve w FBLOCK 0
+[?] Setting FBLOCK (0x29C04) status to UNLOCKED!
+[?] Setting FBLOCK (0x49C04) status to UNLOCKED!
+[?] Setting FBLOCK (0x69C04) status to UNLOCKED!
+[?] Setting FBLOCK (0x89C04) status to UNLOCKED!
+[?] Setting FBLOCK (0xA9C04) status to UNLOCKED!
+[?] Setting FBLOCK (0xC9C04) status to UNLOCKED!
+[?] Setting FBLOCK (0xE9C04) status to UNLOCKED!
+warsaw:/ # reboot bootloader
+user@host:~$ fastboot oem lock-state info
+(bootloader)  FB LockState: UNLOCKED
+(bootloader)  USER LockState: UNLOCKED
+OKAY [  0.005s]
+Finished. Total time: 0.007s
+user@host:~$
 ```
 
 ### Compilation
