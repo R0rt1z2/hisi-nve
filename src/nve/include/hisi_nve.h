@@ -13,6 +13,7 @@
 #define NVE_PARTITION_SIZE   	(128 * 1024)
 #define NVE_PARTITION_NUMBER 	7 /* (mmcblk0p7) */
 #define NV_DEVICE_NAME       	"/dev/block/bootdevice/by-name/nvme"
+#define NV_DEVICE_BLOCK         "/dev/block/mmcblk0p7"
 
 #define NV_CMDLINE_PATH         "/proc/cmdline"
 #define NV_CMDLINE_LEN          2048
@@ -48,6 +49,12 @@
     	printf("[-] "); \
         printf(__VA_ARGS__); \
         exit(-1); \
+    } while(0) \
+
+#define NVE_WARNING(...) \
+        do { \
+        printf("[!] "); \
+        printf(__VA_ARGS__); \
     } while(0) \
 
 #define NVE_INFO(...) \
