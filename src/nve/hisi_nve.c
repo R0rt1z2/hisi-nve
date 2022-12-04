@@ -45,13 +45,19 @@ int nve_manage_fblock(int fd, uint32_t action, int new_status) {
     // Hex-based signature of 'FBLOCK'
     uint8_t fblock_needle[6] = {0x46, 0x42, 0x4c, 0x4f, 0x43, 0x4b};
 
-    read(fd, &header, sizeof(header));
-    // if (header != 0x0) block_size = 0x00020000;
-    block_size = 0x00020000;
-    size_t size = lseek(fd, 0, SEEK_END);
+    // Decide if we actually have to change the file offset.
+    // Images starting with 0s or Us are filled up with junk
+    // data until 0x00020000, where the real data starts.
+    data_buffer = (unsigned char *)mmap(NULL, 1, PROT_READ, MAP_SHARED, fd, 0);
+
+    // We're actually searching for that so-called junk data,
+    // so (as stated before), we must check against 'U's (85)
+    // and 0s.
+    if (data_buffer[0] == 0 || data_buffer[0] == 85) block_size = 0x00020000;
+    munmap(data_buffer, 1);
 
     while (block_size >= 0) {
-        data_buffer = (unsigned char *)mmap(NULL, 0x00020000, PROT_READ | PROT_WRITE, MAP_SHARED , fd, block_size);
+        data_buffer = (unsigned char *)mmap(NULL, 0x00020000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, block_size);
 
         if (data_buffer == MAP_FAILED) {
             NVE_WARNING("Unable to map memory for block %#08x (%s)!\n", block_size, strerror(errno));
