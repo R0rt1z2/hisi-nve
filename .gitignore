@@ -2,6 +2,9 @@
 libs
 obj
 
+# Release files
+*.zip
+
 # NVME images
 *.img
 *.bin
