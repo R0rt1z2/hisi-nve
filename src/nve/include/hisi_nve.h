@@ -1,5 +1,4 @@
-#ifndef HISI_NVE_H
-#define HISI_NVE_H
+#pragma once
 
 #define NVE_INVALID_NVM             0xFFFFFFFF
 #define NVE_BASE_VERSION            0x1
@@ -12,6 +11,7 @@
 
 #define NVE_PARTITION_SIZE   	(128 * 1024)
 #define NVE_PARTITION_NUMBER 	7 /* (mmcblk0p7) */
+
 #define NV_DEVICE_NAME       	"/dev/block/bootdevice/by-name/nvme"
 #define NV_DEVICE_BLOCK         "/dev/block/mmcblk0p7"
 
@@ -118,5 +118,3 @@ struct NVE_struct {
 	struct NVE_partittion *nve_update_ramdisk;
 	struct NVE_partittion *nve_store_ramdisk;
 };
-
-#endif // HISI_NVE_H

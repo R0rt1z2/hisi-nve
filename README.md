@@ -6,6 +6,7 @@
 * Use this tool at your own risk and always backup NVME.
 * This tool was made for educational purposes only.
 * This tool requires a **ROOT shell**.
+* The Linux version only supports FBLOCK I/O operations.
 
 ### Usage
 ```bash

@@ -1,5 +1,4 @@
-#ifndef NVE_MAPPINGS_H
-#define NVE_MAPPINGS_H
+#pragma once
 
 #define NVE_SUPPORTED_SOCS 8
 
@@ -3440,5 +3439,3 @@ static struct hardware_range *all_ranges[8] = {
     &kirin980_ranges,
     &kirin990_ranges
 };
-
-#endif // NVE_MAPPINGS_H

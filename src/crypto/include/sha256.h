@@ -6,8 +6,7 @@
 * Details:    Defines the API for the corresponding SHA1 implementation.
 *********************************************************************/
 
-#ifndef SHA256_H
-#define SHA256_H
+#pragma once
 
 /*************************** HEADER FILES ***************************/
 #include <stddef.h>
@@ -31,5 +30,3 @@ void sha256_init(SHA256_CTX *ctx);
 void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
 void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
 unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md);
-
-#endif   // SHA256_H

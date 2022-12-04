@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -74,6 +75,13 @@ int nve_manage_fblock(int fd, uint32_t action, int new_status) {
                     fblock_status = data_buffer[(ptr - data_buffer) + 8];
                     NVE_INFO("Setting FBLOCK (0x%X) status to %s!\n", block_size + (ptr - data_buffer), new_status == 0x1 ? "LOCKED" : "UNLOCKED");
                     data_buffer[(ptr - data_buffer) + 8] = (unsigned char)new_status;
+
+                    // Sync everything so changes take effect
+                    if (msync(data_buffer, 0x00020000, MS_SYNC) != 0) {
+                        NVE_WARNING("Unable to sync memory for entry (0x%X) (%s)!",  block_size + (ptr - data_buffer),
+                                    strerror(errno));
+                        return -1;
+                    }
                 }
             }
 
@@ -95,13 +103,27 @@ int main(int argc, char *argv[]) {
     char nve_hisi_soc[12];
     char hashed_key[SHA256_BLOCK_SIZE];
 
-    __system_property_get("ro.hardware", nve_hisi_soc);
-    nve_range = get_hardware_range(nve_hisi_soc);
-
+#ifdef __ANDROID__
     if (argc < 3 || *argv[1] == 'h')
         NVE_ERROR("Usage command: %s <w/r> <name> [data]\n", argv[0]);
+#else
+    if (argc < 4 || *argv[2] == 'h')
+        NVE_ERROR("Usage command: %s <soc> <w/r> <name> [data]\n", argv[0]);
+#endif
 
     argv++;
+
+#ifdef __ANDROID__
+    __system_property_get("ro.hardware", nve_hisi_soc);
+#else
+    strcpy(nve_hisi_soc, argv[0]);
+#endif
+
+    nve_range = get_hardware_range(nve_hisi_soc);
+
+#ifndef __ANDROID__
+    argv++;
+#endif
 
     if (*argv[0] != 'r' && *argv[0] != 'w')
         NVE_ERROR("Invalid operation: %s!\n", argv[0]);
@@ -121,6 +143,7 @@ int main(int argc, char *argv[]) {
             hash = 1;
 
     if (strcmp(argv[1], "FBLOCK"))  {
+#ifdef __ANDROID__
         nvme_fd = open(NV_IOCTL_NODE, O_RDWR);
 
         if (nvme_fd < 0)
@@ -160,9 +183,13 @@ int main(int argc, char *argv[]) {
         } else {
             NVE_SUCCESS("Sucessfully updated %s!\n", argv[1]);
         }
+#else
+        NVE_ERROR("Host build can only modify FBLOCK!\n");
+#endif
     } else {
         nvme_fd = open(NV_DEVICE_NAME, O_RDWR);
 
+#ifdef __ANDROID__
         if (nvme_fd < 0) {
             NVE_WARNING("Could not open: %s!\n", NV_DEVICE_NAME);
 
@@ -170,7 +197,11 @@ int main(int argc, char *argv[]) {
             if (nvme_fd < 0)
                 NVE_ERROR("Could not open: %s!\n", NV_DEVICE_BLOCK);
         }
-
+#else
+        nvme_fd = open("nvme.img", O_RDWR);
+        if (nvme_fd < 0)
+            NVE_ERROR("Could not open: nvme.img!\n");
+#endif
         if (*argv[0] == 'w') {
             ret = nve_manage_fblock(nvme_fd, 0, atoi(argv[2]));
         } else {

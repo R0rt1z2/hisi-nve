@@ -1,6 +1,7 @@
 # Built binaries
 libs
 obj
+*.o
 
 # Release files
 *.zip
@@ -12,3 +13,6 @@ obj
 
 # Mapping tables
 *.h
+
+# (C)Lion
+.idea
