@@ -12,9 +12,6 @@
 #define NVE_PARTITION_SIZE   	(128 * 1024)
 #define NVE_PARTITION_NUMBER 	7 /* (mmcblk0p7) */
 
-#define NV_DEVICE_NAME       	"/dev/block/bootdevice/by-name/nvme"
-#define NV_DEVICE_BLOCK         "/dev/block/mmcblk0p7"
-
 #define NV_CMDLINE_PATH         "/proc/cmdline"
 #define NV_CMDLINE_LEN          2048
 
@@ -44,38 +41,7 @@
 #define NVE_ERROR_PARAM      2
 #define NVE_ERROR_PARTITION  3
 
-#define NVE_ERROR(...) \
-	do { \
-    	printf("[-] "); \
-        printf(__VA_ARGS__); \
-        exit(-1); \
-    } while(0) \
-
-#define NVE_WARNING(...) \
-        do { \
-        printf("[!] "); \
-        printf(__VA_ARGS__); \
-    } while(0) \
-
-#define NVE_INFO(...) \
-	do { \
-    	printf("[?] "); \
-        printf(__VA_ARGS__); \
-    } while(0) \
-
-#define NVE_DEBUG(...) \
-	do { \
-    	printf("[*] "); \
-        printf(__VA_ARGS__); \
-    } while(0) \
-
-#define NVE_SUCCESS(...) \
-	do { \
-    	printf("[+] "); \
-        printf(__VA_ARGS__); \
-    } while(0) \
-
-struct hisi_nve_info_user {
+ struct hisi_nve_info_user {
 	uint32_t nv_operation;
 	uint32_t nv_number;
 	char nv_name[NV_NAME_LENGTH];
@@ -117,4 +83,11 @@ struct NVE_struct {
 	struct NVE_partittion *nve_current_ramdisk;
 	struct NVE_partittion *nve_update_ramdisk;
 	struct NVE_partittion *nve_store_ramdisk;
+};
+
+char *nvme_paths[] = {
+        "/dev/block/mmcblk0p7",
+        "/dev/block/platform/hi_mci.0/by-name/nvme",
+        "/dev/block/bootdevice/by-name/nvme",
+        NULL
 };

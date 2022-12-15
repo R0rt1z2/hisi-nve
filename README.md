@@ -1,16 +1,15 @@
 # hisi-nve
-#### Android PoC to read/write Huawei's *NVME* image
+#### PoC to read/write Huawei's *NVME* image
 ----
 
 ### Disclaimers
 * Use this tool at your own risk and always backup NVME.
 * This tool was made for educational purposes only.
 * This tool requires a **ROOT shell**.
-* The Linux version only supports FBLOCK I/O operations.
 
 ### Usage
 ```bash
-hisi-nve <w/r> <name> [data]
+hisi-nve <read|write> <key> [value] [nvme.img]
 ```
 ###### (sample outputs captured on a Huawei P10 Lite via [adb](https://developer.android.com/studio/command-line/adb))
 ```console
@@ -27,26 +26,20 @@ user@host:~$
 
 # Read the S/N of the phone
 warsaw:/ # ./data/local/tmp/hisi-nve r SN
-[+] 2XJDU17408002XXX
+[+] SN: 2XJDU17408002XXX
 warsaw:/ #
 
 # Set FBLOCK state to unlocked
 warsaw:/ # ./hisi-nve r FBLOCK
-[?] FBLOCK (0x29C04): LOCKED (1)
-[?] FBLOCK (0x49C04): LOCKED (1)
-[?] FBLOCK (0x69C04): LOCKED (1)
-[?] FBLOCK (0x89C04): LOCKED (1)
-[?] FBLOCK (0xA9C04): LOCKED (1)
-[?] FBLOCK (0xC9C04): LOCKED (1)
-[?] FBLOCK (0xE9C04): LOCKED (1)
+[+] FBLOCK 0: unlocked (0x1)
+[+] FBLOCK 1: unlocked (0x1)
+[+] FBLOCK 2: unlocked (0x1)
+[+] FBLOCK 3: unlocked (0x1)
+[+] FBLOCK 4: unlocked (0x1)
+[+] FBLOCK 5: unlocked (0x1)
+[+] FBLOCK 6: unlocked (0x1)
 warsaw:/ # ./hisi-nve w FBLOCK 0
-[?] Setting FBLOCK (0x29C04) status to UNLOCKED!
-[?] Setting FBLOCK (0x49C04) status to UNLOCKED!
-[?] Setting FBLOCK (0x69C04) status to UNLOCKED!
-[?] Setting FBLOCK (0x89C04) status to UNLOCKED!
-[?] Setting FBLOCK (0xA9C04) status to UNLOCKED!
-[?] Setting FBLOCK (0xC9C04) status to UNLOCKED!
-[?] Setting FBLOCK (0xE9C04) status to UNLOCKED!
+[+] Successfully wrote 0 to FBLOCK!
 warsaw:/ # reboot bootloader
 user@host:~$ fastboot oem lock-state info
 (bootloader)  FB LockState: UNLOCKED
@@ -69,9 +62,10 @@ user@host:~$ export PATH=$PATH:~/android-ndk-r20
 
 # Clone the `hisi-nve` git repository and build the binaries.
 user@host:~$ git clone https://github.com/R0rt1z2/hisi-nve.git && cd hisi-nve
-user@host:~/hisi-nve$ make && file obj/local/{arm64-v8a,armeabi-v7a}/hisi-nve
-obj/local/arm64-v8a/hisi-nve:   ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, BuildID[sha1]=X, with debug_info, not stripped
-obj/local/armeabi-v7a/hisi-nve: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, BuildID[sha1]=X, with debug_info, not stripped
+user@host:~/hisi-nve$ make all && file libs/{arm64-v8a,armeabi-v7a,linux-$(uname -m)}/hisi-nve
+libs/arm64-v8a/hisi-nve:    ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, BuildID[sha1]=X, with debug_info, not stripped
+libs/armeabi-v7a/hisi-nve:  ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, BuildID[sha1]=X, with debug_info, not stripped
+libs/linux-x86_64/hisi-nve: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=57311f7fd04aaeeac4d8ecf424846eed515a30ec, for GNU/Linux 3.2.0, not stripped
 user@host:~/hisi-nve$
 ```
 
