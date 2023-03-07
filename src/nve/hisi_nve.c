@@ -106,7 +106,7 @@ int nve_read_entry(int fd, char *nve_name, char *values) {
 
 int nve_write_entry(int fd, char *nve_name, char *new_value) {
     uint32_t offset, block_size, entry_count = 0;
-    unsigned char *data_buffer, *ptr = NULL, *hash = malloc(SHA256_BLOCK_SIZE);
+    unsigned char *data_buffer, *ptr = NULL;
     unsigned char *nve_data_buffer = malloc(NVE_NV_DATA_SIZE);
 
     // Decide if we actually have to change the file offset.
@@ -119,14 +119,6 @@ int nve_write_entry(int fd, char *nve_name, char *new_value) {
     // and 0s.
     if (data_buffer[0] == 0 || data_buffer[0] == 85) block_size = 0x00020000;
     munmap(data_buffer, 1);
-
-    if (strcmp(nve_name, "USRKEY") == 0) {
-        if (strlen(new_value) > NVE_NV_USRLOCK_LEN)
-            NVE_LOG('-', "USRKEY is too long!\n");
-
-        NVE_LOG('*', "Hashing USRKEY...\n");
-        SHA256(new_value, strlen(new_value), hash);
-    }
 
     while (block_size >= 0) {
         data_buffer = (unsigned char *)mmap(NULL, 0x00020000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, block_size);
@@ -148,11 +140,7 @@ int nve_write_entry(int fd, char *nve_name, char *new_value) {
                     return -1;
                 }
             } else {
-                if (!strcmp(nve_name, "USRKEY")) {
-                    memcpy(data_buffer + offset, hash, NVE_NV_DATA_SIZE);
-                } else {
-                    memcpy(data_buffer + offset, new_value, NVE_NV_DATA_SIZE);
-                }
+                memcpy(data_buffer + offset, new_value, NVE_NV_DATA_SIZE);
             }
 
             entry_count++;
@@ -212,17 +200,17 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "FBLOCK") != 0) {
         nvme_fd = open(NV_IOCTL_NODE, O_RDWR);
         if (nvme_fd < 0) {
-            NVE_LOG('!', "Unable to open %s\n", NV_IOCTL_NODE);
+            NVE_LOG('!', "Unable to open %s!\n", NV_IOCTL_NODE);
         }
     }
 
     if (nvme_fd == -1) {
-        NVE_LOG('!', "Unable to open %s, falling back to mmap!\n", NV_IOCTL_NODE);
+        NVE_LOG('!', "ioctl mode not available, will use file mode!\n");
 
         for (int i = 0; nvme_paths[i] != NULL; i++) {
             nvme_fd = open(nvme_paths[i], O_RDWR);
             if (nvme_fd >= 0) {
-                NVE_LOG('?', "Using %s as nvme device\n", nvme_paths[i]);
+                NVE_LOG('?', "Using '%s' as nvme device\n", nvme_paths[i]);
                 break;
             }
         }
@@ -256,6 +244,12 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[1], "FBLOCK") && io_mode == 0)
         io_mode = 1;
 
+    if (rw == 0 && !strcmp(argv[1], "USRKEY")) {
+        NVE_LOG('?', "Hashing USRKEY...\n");
+        if (SHA256(argv[2], strlen(argv[2]), hashed_key) == NULL)
+            NVE_LOG('-', "USRKEY must be 16 characters long!\n");
+    }
+
     if (io_mode == 0) {
         struct hisi_nve_info_user nveCommandBuffer = {
                 .nv_operation  = rw,
@@ -269,10 +263,6 @@ int main(int argc, char *argv[]) {
 
         if (!rw) {
             if (hash) {
-                if (strlen(argv[2]) > NVE_NV_USRLOCK_LEN)
-                    NVE_LOG('-', "USRKEY is too long!\n");
-                NVE_LOG('*', "Hashing USRKEY...\n");
-                SHA256(argv[2], strlen(argv[2]), hashed_key);
                 strncpy(nveCommandBuffer.nv_data, hashed_key, (strlen(hashed_key)));
             } else {
                 strncpy(nveCommandBuffer.nv_data,
@@ -290,7 +280,7 @@ int main(int argc, char *argv[]) {
         if (rw) {
             NVE_LOG('+', "Read %s: %s\n", argv[1], nveCommandBuffer.nv_data);
         } else {
-            NVE_LOG('+', "Successfully wrote %s to %s!\n", nveCommandBuffer.nv_data, argv[1]);
+            NVE_LOG('+', "Successfully wrote %s to %s!\n", argv[2], argv[1]);
         }
     } else {
         if (rw) {
@@ -303,7 +293,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         } else {
-            ret = nve_write_entry(nvme_fd, argv[1], argv[2]);
+            ret = nve_write_entry(nvme_fd, argv[1], !strcmp(argv[1], "USRKEY") ? hashed_key : argv[2]);
             if (ret < 0) {
                 NVE_LOG('-', "Something went wrong (%s)!\n", strerror(errno));
             } else {
