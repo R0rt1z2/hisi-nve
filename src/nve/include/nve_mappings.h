@@ -738,7 +738,7 @@ static struct hardware_range hi6250_ranges = {
 
 // Automatically generated mapping table for kirin950
 static struct hardware_range kirin950_ranges = {
-    .soc_name = "kirin950",
+    .soc_name = "hi3650",
     .nve_entry_count = 352,
     .nve_hashed_key = 1,
     .nve_entries = {
